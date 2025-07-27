@@ -1,7 +1,9 @@
-# collection := "-collection:libs=$HOME/dev/odin/ext/"
+ext := "-collection:ext=$HOME/dev/odin/ext/"
 assets := "-collection:assets=./assets/"
 
-# odin run . {{collection}}
 run:
-    odin run . {{assets}}
+    odin run ./src {{assets}} {{ext}}
+
+build_atlas:
+    ./atlas_builder
 
