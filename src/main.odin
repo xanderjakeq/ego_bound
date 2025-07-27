@@ -15,8 +15,6 @@ Rect :: rl.Rectangle
 
 ATLAS_DATA :: #load("../assets/atlas.png")
 
-
-
 atlas: rl.Texture
 
 Animation_Name_Main :: enum {
@@ -47,31 +45,6 @@ update_animation :: proc(a: ^AnimationMain) {
 	}
 }
 
-draw_animation :: proc(a: AnimationMain, pos: Vec2, flip: bool) {
-	width := f32(a.texture.width)
-	height := f32(a.texture.height)
-
-	source := rl.Rectangle {
-		x      = f32(a.current_frame) * width / f32(a.num_frames),
-		y      = 0,
-		width  = width / f32(a.num_frames),
-		height = height,
-	}
-
-	if flip {
-		source.width = -source.width
-	}
-
-	dest := rl.Rectangle {
-		x      = pos.x,
-		y      = pos.y,
-		width  = width / f32(a.num_frames),
-		height = height,
-	}
-
-	rl.DrawTexturePro(a.texture, source, dest, {dest.width / 2, dest.height}, 0, rl.WHITE)
-}
-
 animation_draw :: proc(anim: Animation, pos: rl.Vector2) {
 	if anim.current_frame == .None {
 		return
@@ -91,7 +64,18 @@ animation_draw :: proc(anim: Animation, pos: rl.Vector2) {
 	// bottom offset instead.
 	offset_pos := pos + {texture.offset_left, texture.offset_top}
 
-	rl.DrawTextureRec(atlas, texture.rect, offset_pos, rl.WHITE)
+	// if flip {
+	// 	source.width = -source.width
+	// }
+
+	dest := rl.Rectangle {
+		x      = pos.x,
+		y      = pos.y,
+		width  = texture.rect.width,
+		height = texture.rect.height,
+	}
+
+	rl.DrawTexturePro(atlas, texture.rect, dest, {dest.width / 2, dest.height}, 0, rl.WHITE)
 }
 
 PixelWindowHeight :: 180
@@ -109,8 +93,6 @@ main :: proc() {
     mem.tracking_allocator_init(&track, context.allocator)
     context.allocator = mem.tracking_allocator(&track)
 
-
-
     defer {
         for _, entry in track.allocation_map {
             fmt.eprintf("%v leaked %v bytes\n", entry.location, entry.size)
@@ -125,6 +107,9 @@ main :: proc() {
 	rl.InitWindow(1280, 720, "ego:bound")
 	rl.SetWindowState({.WINDOW_RESIZABLE})
 
+    atlas_image := rl.LoadImageFromMemory(".png", raw_data(ATLAS_DATA), i32(len(ATLAS_DATA)))
+	atlas = rl.LoadTextureFromImage(atlas_image)
+	rl.UnloadImage(atlas_image)
 
     // font := get_font()
 
@@ -133,21 +118,7 @@ main :: proc() {
 	player_grounded: bool
 	player_flip: bool
 
-    anim := animation_create(.Mc_Idle)
-
-	// player_idle := Animation {
-	// 	texture      = rl.LoadTexture("./assets/cat_idle.png"),
-	// 	num_frames   = 2,
-	// 	frame_length = 0.5,
-	// 	name         = .Idle,
-	// }
-	//
-	// player_run := Animation {
-	// 	texture      = rl.LoadTexture("./assets/cat_run.png"),
-	// 	num_frames   = 4,
-	// 	frame_length = 0.1,
-	// 	name         = .Run,
-	// }
+    anim := animation_create(.Mc_Idle, f32(.3))
 
 	current_anim := anim
 
@@ -164,33 +135,23 @@ main :: proc() {
 
 	platform_texture := atlas_textures[.Platform]
 
-
     is_editing := false
 
 	for !rl.WindowShouldClose() {
 		rl.BeginDrawing()
-		// rl.ClearBackground({110, 184, 168, 255})
+		rl.ClearBackground({110, 184, 168, 255})
 		rl.SetTargetFPS(500)
 
 		if rl.IsKeyDown(.LEFT) {
 			player_vel.x = -100
 			player_flip = true
 
-			// if current_anim.name != .Run {
-			// 	current_anim = player_run
-			// }
 		} else if rl.IsKeyDown(.RIGHT) {
 			player_vel.x = 100
 			player_flip = false
 
-			// if current_anim.name != .Run {
-			// 	current_anim = player_run
-			// }
 		} else {
 			player_vel.x = 0
-			// if current_anim.name != .Idle {
-			// 	current_anim = player_idle
-			// }
 		}
 
         //gravity
@@ -207,18 +168,16 @@ main :: proc() {
 
 		player_grounded = false
 
-		for platform in level.platforms {
-			if rl.CheckCollisionRecs(
-                player_feet_collider, platform_collider(platform)
-            ) && player_vel.y > 0 {
-				player_vel.y = 0
-				player_pos.y = platform.y
-				player_grounded = true
-			}
-		}
+		// for platform in level.platforms {
+		// 	if rl.CheckCollisionRecs(
+		//               player_feet_collider, platform_collider(platform)
+		//           ) && player_vel.y > 0 {
+		// 		player_vel.y = 0
+		// 		player_pos.y = platform.y
+		// 		player_grounded = true
+		// 	}
+		// }
 
-
-		// update_animation(&current_anim)
 
 		screen_height := f32(rl.GetScreenHeight())
 
@@ -234,13 +193,12 @@ main :: proc() {
 		// draw_animation(current_anim, player_pos, player_flip)
 
         //test animation render
-        fmt.println("should draw animation")
         animation_draw(anim, player_pos)
 
 
-		for platform in level.platforms {
-			rl.DrawTextureRec(atlas, platform_texture.rect, {platform.x, platform.y}, rl.WHITE)
-		}
+		// for platform in level.platforms {
+		// 	rl.DrawTextureRec(atlas, platform_texture.rect, {platform.x, platform.y}, rl.WHITE)
+		// }
 
 		{ 	// Debug
 			rl.DrawRectangleRec(player_feet_collider, {0, 255, 0, 100})
@@ -250,24 +208,24 @@ main :: proc() {
             is_editing = !is_editing
         }
 
-        if is_editing {
-            mp := rl.GetScreenToWorld2D(rl.GetMousePosition(), camera)
-
-            rl.DrawTextureRec(atlas, platform_texture.rect, mp, rl.WHITE)
-
-            if rl.IsMouseButtonPressed(.LEFT){
-                append(&level.platforms, mp)
-            }
-
-            if rl.IsMouseButtonPressed(.RIGHT) {
-                for p, idx in level.platforms {
-                    if rl.CheckCollisionPointRec(mp, platform_collider(p)) {
-                        unordered_remove(&level.platforms, idx)
-                        break
-                    }
-                }
-            }
-        }
+        // if is_editing {
+        //     mp := rl.GetScreenToWorld2D(rl.GetMousePosition(), camera)
+        //
+        //     rl.DrawTextureRec(atlas, platform_texture.rect, mp, rl.WHITE)
+        //
+        //     if rl.IsMouseButtonPressed(.LEFT){
+        //         append(&level.platforms, mp)
+        //     }
+        //
+        //     if rl.IsMouseButtonPressed(.RIGHT) {
+        //         for p, idx in level.platforms {
+        //             if rl.CheckCollisionPointRec(mp, platform_collider(p)) {
+        //                 unordered_remove(&level.platforms, idx)
+        //                 break
+        //             }
+        //         }
+        //     }
+        // }
 
         // rl.DrawTextEx(font, "Draw call 1: This text + player + background graphics + tiles", {-140, 20}, 15, 0, rl.WHITE)
 

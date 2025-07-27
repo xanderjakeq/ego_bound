@@ -6,8 +6,12 @@ Animation :: struct {
 	timer:         f32,
 }
 
-animation_create :: proc(anim: Animation_Name) -> Animation {
+animation_create :: proc(anim: Animation_Name, custom_duration: Maybe(f32)) -> Animation {
 	a := atlas_animations[anim]
+
+	if custom_duration != nil {
+		atlas_textures[a.first_frame].duration = custom_duration.(f32)
+	}
 
 	return {
 		current_frame = a.first_frame,
