@@ -32,10 +32,6 @@ animation_draw :: proc(anim: Animation, pos: rl.Vector2) {
 	//NOTE: offset from texture source file
 	offset_pos := pos + {texture.offset_left, texture.offset_top}
 
-	// if flip {
-	// 	source.width = -source.width
-	// }
-
 	dest := rl.Rectangle {
 		x      = pos.x,
 		y      = pos.y,
@@ -52,13 +48,11 @@ Target :: struct {
 }
 
 Level :: struct {
-	safe_word:   cstring,
-	scary_words: [dynamic]Target,
-	speed:       f32,
-}
-
-platform_collider :: proc(pos: Vec2) -> rl.Rectangle {
-	return {pos.x, pos.y, 96, 16}
+	safe_word:    cstring,
+	scary_words:  [dynamic]Target,
+	speed:        f32,
+	spawn_radius: f32,
+	score:        u32,
 }
 
 move_point_to :: proc(from: ^Vec2, to: Vec2, speed: f32) {
@@ -109,6 +103,7 @@ main :: proc() {
 	rl.UnloadImage(atlas_image)
 
 	font := get_font()
+	ui_font_size := f32(50)
 
 	player_pos: Vec2
 	player_vel: Vec2
@@ -117,18 +112,12 @@ main :: proc() {
 
 	anim := animation_create(.Mc_Idle, FPS * 2)
 	current_anim := anim
-	level := Level {
-		safe_word = "my bad",
-		speed     = .3,
-	}
 
-	// if level_data, ok := os.read_entire_file("level.json", context.temp_allocator); ok {
-	// 	if json.unmarshal(level_data, &level) != nil {
-	// 		append(&level.scary_words, Target{"mana", Vec2{-20, 20}})
-	// 	}
-	// } else {
-	// 	append(&level.scary_words, Target{"mana", Vec2{-20, 20}})
-	// }
+	level := Level {
+		safe_word    = "my bad",
+		speed        = .15,
+		spawn_radius = 150,
+	}
 
 	config: Game_Config
 
@@ -143,47 +132,23 @@ main :: proc() {
 	for _ in 0 ..= 10 {
 		append(
 			&level.scary_words,
-			Target{rand.choice(config.word_list[:]), generate_enemy_origin(player_pos, 200)},
+			Target {
+				rand.choice(config.word_list[:]),
+				generate_enemy_origin(player_pos, level.spawn_radius),
+			},
 		)
 	}
 
-	platform_texture := atlas_textures[.Platform]
 	title_texture := atlas_textures[.Title]
-
-	is_editing := false
-
 
 	player_input := strings.builder_make()
 	defer strings.builder_destroy(&player_input)
-
 
 	for !rl.WindowShouldClose() {
 		rl.BeginDrawing()
 		rl.ClearBackground({110, 184, 168, 255})
 		rl.SetTargetFPS(60)
 		rl.DrawFPS(10, 10)
-
-		// movement
-		// if rl.IsKeyDown(.LEFT) {
-		// 	player_vel.x = -100
-		// 	player_flip = true
-		//
-		// } else if rl.IsKeyDown(.RIGHT) {
-		// 	player_vel.x = 100
-		// 	player_flip = false
-		//
-		// } else if rl.IsKeyDown(.UP) {
-		// 	player_vel.y = -100
-		//
-		// } else if rl.IsKeyDown(.DOWN) {
-		// 	player_vel.y = 100
-		//
-		// } else {
-		// 	player_vel = {0, 0}
-		// }
-
-		//gravity
-		// player_vel.y += 1000 * rl.GetFrameTime()
 
 		if player_grounded && rl.IsKeyPressed(.SPACE) {
 			player_vel.y = -300
@@ -193,16 +158,6 @@ main :: proc() {
 		player_pos += player_vel * rl.GetFrameTime()
 		player_feet_collider := rl.Rectangle{player_pos.x - 4, player_pos.y - 4, 8, 4}
 
-
-		// for platform in level.platforms {
-		// 	if rl.CheckCollisionRecs(
-		//               player_feet_collider, platform_collider(platform)
-		//           ) && player_vel.y > 0 {
-		// 		player_vel.y = 0
-		// 		player_pos.y = platform.y
-		// 		player_grounded = true
-		// 	}
-		// }
 
 		screen_height := f32(rl.GetScreenHeight())
 
@@ -216,7 +171,6 @@ main :: proc() {
 
 		// update target position
 		for &target in level.scary_words {
-
 			move_point_to(
 				&target.pos,
 				player_pos,
@@ -229,18 +183,15 @@ main :: proc() {
 			if u32(target_world_pos.x) == u32(player_world_pos.x) &&
 			   u32(target_world_pos.y) == u32(player_world_pos.y) {
 				target.word = rand.choice(config.word_list[:])
-				target.pos = generate_enemy_origin(player_pos, 200)
+				target.pos = generate_enemy_origin(player_pos, level.spawn_radius)
 			}
 		}
 
 		// handle player input
 		handle_input(&player_input)
 
-
 		rl.BeginMode2D(camera)
-
 		animation_draw(anim, player_pos)
-
 
 		for &target in level.scary_words {
 			pos := target.pos
@@ -250,7 +201,6 @@ main :: proc() {
 				width  = 40,
 				height = 10,
 			}
-			rl.DrawRectangleRec(rect, rl.RED)
 
 			if input_cstr, err := strings.to_cstring(&player_input); err == nil {
 				to_render, is_match := replace_matched_prefix(
@@ -259,10 +209,12 @@ main :: proc() {
 				)
 
 				if is_match {
-					// TODO: increment score
+					level.score += 1
 
-					target.pos = generate_enemy_origin(player_pos, 200)
+					// TODO: loop through all targets before resetting input
+					target.pos = generate_enemy_origin(player_pos, level.spawn_radius)
 					strings.builder_reset(&player_input)
+					target.word = rand.choice(config.word_list[:])
 				}
 
 				rl.DrawTextEx(font, to_render, pos, 3, 0, rl.WHITE)
@@ -271,26 +223,19 @@ main :: proc() {
 			free_all(context.temp_allocator)
 		}
 
-		{ 	// Debug
-			rl.DrawRectangleRec(player_feet_collider, {0, 255, 0, 100})
-		}
-
-		if rl.IsKeyPressed(.F2) {
-			is_editing = !is_editing
-		}
-
+		// { 	// Debug
+		// 	rl.DrawRectangleRec(player_feet_collider, {0, 255, 0, 100})
+		// }
 		rl.EndMode2D()
 
-
-		font_size := f32(50)
 		rl.DrawTextEx(
 			font,
 			level.safe_word,
 			{
-				(f32(rl.GetScreenWidth()) / 2) - font_size,
-				f32(rl.GetScreenHeight()) - (font_size + 10),
+				(f32(rl.GetScreenWidth()) / 2) - ui_font_size,
+				f32(rl.GetScreenHeight()) - (ui_font_size + 10),
 			},
-			font_size,
+			ui_font_size,
 			0,
 			rl.YELLOW,
 		)
@@ -310,23 +255,16 @@ main :: proc() {
 			rl.WHITE,
 		)
 
-		// fmt.println(player_input)
-
 		if input_string, err := strings.to_cstring(&player_input); err == nil {
-			rl.DrawTextEx(font, input_string, {f32(rl.GetScreenWidth()) / 2, 10}, 20, 0, rl.WHITE)
+			rl.DrawTextEx(
+				font,
+				input_string,
+				{(f32(rl.GetScreenWidth()) / 2) - 30, (f32(rl.GetScreenHeight()) / 3)},
+				20,
+				0,
+				rl.WHITE,
+			)
 		}
-
-		// fmt.println("after")
-		// fmt.println(player_input)
-
-		// rl.DrawTextEx(
-		// 	font,
-		// 	strings.to_cstring(&player_input),
-		// 	{f32(rl.GetScreenWidth()) / 2, 10},
-		// 	20,
-		// 	0,
-		// 	rl.WHITE,
-		// )
 
 		rl.EndDrawing()
 	}

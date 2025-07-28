@@ -27,13 +27,10 @@ LETTERS_IN_FONT :: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz12345678
 
 // A generated square in the atlas you can use with rl.SetShapesTexture to make
 // raylib shapes such as rl.DrawRectangleRec() use the atlas.
-SHAPES_TEXTURE_RECT :: Rect {206, 74, 10, 10}
+SHAPES_TEXTURE_RECT :: Rect {173, 74, 10, 10}
 
 Texture_Name :: enum {
 	None,
-	Cat_Run,
-	Platform,
-	Cat_Idle,
 	Mc0,
 	Mc1,
 	Mc2,
@@ -58,9 +55,6 @@ Atlas_Texture :: struct {
 
 atlas_textures: [Texture_Name]Atlas_Texture = {
 	.None = {},
-	.Cat_Run = { rect = {244, 79, 64, 16}, offset_top = 0, offset_right = 0, offset_bottom = 0, offset_left = 0, document_size = {64, 16}, duration = 0.000},
-	.Platform = { rect = {0, 79, 96, 16}, offset_top = 0, offset_right = 0, offset_bottom = 0, offset_left = 0, document_size = {96, 16}, duration = 0.000},
-	.Cat_Idle = { rect = {173, 74, 32, 16}, offset_top = 0, offset_right = 0, offset_bottom = 0, offset_left = 0, document_size = {32, 16}, duration = 0.000},
 	.Mc0 = { rect = {69, 0, 22, 28}, offset_top = 3, offset_right = 7, offset_bottom = 1, offset_left = 3, document_size = {32, 32}, duration = 0.100},
 	.Mc1 = { rect = {92, 0, 21, 28}, offset_top = 3, offset_right = 8, offset_bottom = 1, offset_left = 3, document_size = {32, 32}, duration = 0.100},
 	.Mc2 = { rect = {275, 0, 21, 27}, offset_top = 4, offset_right = 8, offset_bottom = 1, offset_left = 3, document_size = {32, 32}, duration = 0.100},
@@ -169,12 +163,12 @@ atlas_glyphs: []Atlas_Glyph = {
 	{ rect = {172, 29, 14, 25}, value = '?', offset_x = 1, offset_y = 0, advance_x = 16},
 	{ rect = {214, 29, 6, 25}, value = '!', offset_x = 2, offset_y = 0, advance_x = 9},
 	{ rect = {388, 1, 26, 25}, value = '&', offset_x = 1, offset_y = 0, advance_x = 25},
-	{ rect = {505, 74, 6, 7}, value = '.', offset_x = 2, offset_y = 18, advance_x = 9},
+	{ rect = {213, 70, 6, 7}, value = '.', offset_x = 2, offset_y = 18, advance_x = 9},
 	{ rect = {213, 56, 6, 12}, value = ',', offset_x = 2, offset_y = 18, advance_x = 9},
-	{ rect = {218, 70, 0, 0}, value = '_', offset_x = 0, offset_y = 24, advance_x = 9},
+	{ rect = {61, 59, 0, 0}, value = '_', offset_x = 0, offset_y = 24, advance_x = 9},
 	{ rect = {505, 55, 6, 17}, value = ':', offset_x = 2, offset_y = 8, advance_x = 9},
-	{ rect = {220, 70, 0, 0}, value = '[', offset_x = 0, offset_y = 24, advance_x = 9},
-	{ rect = {218, 72, 0, 0}, value = ']', offset_x = 0, offset_y = 24, advance_x = 9},
-	{ rect = {451, 75, 10, 3}, value = '-', offset_x = 1, offset_y = 14, advance_x = 12},
-	{ rect = {220, 72, 0, 0}, value = '+', offset_x = 0, offset_y = 24, advance_x = 9},
+	{ rect = {63, 59, 0, 0}, value = '[', offset_x = 0, offset_y = 24, advance_x = 9},
+	{ rect = {18, 61, 0, 0}, value = ']', offset_x = 0, offset_y = 24, advance_x = 9},
+	{ rect = {185, 75, 10, 3}, value = '-', offset_x = 1, offset_y = 14, advance_x = 12},
+	{ rect = {20, 61, 0, 0}, value = '+', offset_x = 0, offset_y = 24, advance_x = 9},
 }
