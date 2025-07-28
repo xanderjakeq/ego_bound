@@ -1,7 +1,25 @@
-# boot.dev hxthn
+# ego:bound | boot.dev hxthn
 goal: gain experience with odin and manual memory management in general
 
-## build and run
+## gameplay
+
+type as fast as possible to protect yourself from scary words! and if it there
+are too many scary words, type in the `safeword` to clear the whole map. *using
+the safeword is a mark of shame*
+
+![sketch](./assets/sketch.png)
+![title](./assets/title.png)
+![mc_preview](./assets/mc_preview.gif)
+
+features:
+- [x] capture keyboard input and `ctrl+backspace` undo
+- [x] mc idle animation
+- [ ] mc attack animations
+- [ ] sfx/vfx
+- [ ] scoring system
+- [ ] game ui
+
+## install 
 requirements:
 - [odin compiler](https://odin-lang.org/docs/install/)
 - [just](https://github.com/casey/just)
@@ -28,7 +46,7 @@ what api is availabe. it turns out that
 >
 > -- <cite>Barinzaya(from the Odin discord server)<cite>
 
-i have been using rust for a bit and early at the start of this project, i lost
+i have been using rust for a bit and at the start of this project, i lost
 30+ mins because of an uninitialized variable. with rust, i just follow what the
 compiler tells me to do, and i don't feel like i need other tools to debug rust
 code. it's a lot easier to move in odin, but i feel like i need a debugger to
