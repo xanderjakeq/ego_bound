@@ -119,7 +119,7 @@ main :: proc() {
 	current_anim := anim
 	level := Level {
 		safe_word = "my bad",
-		speed     = .5,
+		speed     = .3,
 	}
 
 	// if level_data, ok := os.read_entire_file("level.json", context.temp_allocator); ok {
@@ -242,7 +242,7 @@ main :: proc() {
 		animation_draw(anim, player_pos)
 
 
-		for target in level.scary_words {
+		for &target in level.scary_words {
 			pos := target.pos
 			rect := Rect {
 				x      = pos.x,
@@ -252,12 +252,21 @@ main :: proc() {
 			}
 			rl.DrawRectangleRec(rect, rl.RED)
 
-			// builder := strings.builder_make(allocator = context.temp_allocator)
+			if input_cstr, err := strings.to_cstring(&player_input); err == nil {
+				to_render, is_match := replace_matched_prefix(
+					string(input_cstr),
+					string(target.word),
+				)
 
-			// strings.write_string(&builder, target.word)
-			// rl.DrawTextEx(font, strings.to_cstring(&builder), pos, 5, 0, rl.WHITE)
+				if is_match {
+					// TODO: increment score
 
-			rl.DrawTextEx(font, target.word, pos, 3, 0, rl.WHITE)
+					target.pos = generate_enemy_origin(player_pos, 200)
+					strings.builder_reset(&player_input)
+				}
+
+				rl.DrawTextEx(font, to_render, pos, 3, 0, rl.WHITE)
+			}
 
 			free_all(context.temp_allocator)
 		}

@@ -1,6 +1,7 @@
 package game
 
 import "core:fmt"
+import "core:math"
 import "core:slice"
 import "core:strings"
 
@@ -86,4 +87,46 @@ handle_input :: proc(string_builder: ^strings.Builder) {
 	}
 
 	strings.write_string(string_builder, char)
+}
+
+replace_matched_prefix :: proc(
+	input: string,
+	target: string,
+) -> (
+	new_str: cstring,
+	is_match: bool,
+) {
+	input_len := len(input)
+	target_len := len(target)
+	min_len: int
+
+	if input_len < target_len {
+		min_len = input_len
+	} else {
+		min_len = target_len
+	}
+
+	diff_string := strings.builder_make(0, target_len)
+	defer strings.builder_destroy(&diff_string)
+
+	i := 0
+	for i < min_len {
+		if input[i] == target[i] {
+			strings.write_string(&diff_string, "^")
+			i += 1
+			continue
+		}
+		break
+	}
+
+	if i == target_len {
+		cstr, err := strings.to_cstring(&diff_string)
+
+		return cstr, true
+	}
+
+	strings.write_string(&diff_string, string(target[i:]))
+	cstr, err := strings.to_cstring(&diff_string)
+
+	return cstr, false
 }
