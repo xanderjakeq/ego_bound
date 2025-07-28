@@ -2,7 +2,6 @@ package game
 
 import rl "vendor:raylib"
 
-
 get_font :: proc() -> rl.Font {
 	num_glyphs := len(atlas_glyphs)
 	font_rects := make([]Rect, num_glyphs)

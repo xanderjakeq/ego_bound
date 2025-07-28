@@ -43,7 +43,7 @@ animation_draw :: proc(anim: Animation, pos: rl.Vector2) {
 		height = texture.rect.height,
 	}
 
-	rl.DrawTexturePro(atlas, texture.rect, dest, {dest.width / 2, dest.height}, 0, rl.WHITE)
+	rl.DrawTexturePro(atlas, texture.rect, dest, {(dest.width / 2) + 3, dest.height}, 0, rl.WHITE)
 }
 
 Target :: struct {
@@ -52,6 +52,7 @@ Target :: struct {
 }
 
 Level :: struct {
+	safe_word:   cstring,
 	scary_words: [dynamic]Target,
 	speed:       f32,
 }
@@ -117,7 +118,8 @@ main :: proc() {
 	anim := animation_create(.Mc_Idle, FPS * 2)
 	current_anim := anim
 	level := Level {
-		speed = .5,
+		safe_word = "my bad",
+		speed     = .5,
 	}
 
 	// if level_data, ok := os.read_entire_file("level.json", context.temp_allocator); ok {
@@ -146,8 +148,14 @@ main :: proc() {
 	}
 
 	platform_texture := atlas_textures[.Platform]
+	title_texture := atlas_textures[.Title]
 
 	is_editing := false
+
+
+	player_input := strings.builder_make()
+	defer strings.builder_destroy(&player_input)
+
 
 	for !rl.WindowShouldClose() {
 		rl.BeginDrawing()
@@ -185,10 +193,6 @@ main :: proc() {
 		player_pos += player_vel * rl.GetFrameTime()
 		player_feet_collider := rl.Rectangle{player_pos.x - 4, player_pos.y - 4, 8, 4}
 
-		player_grounded = false
-
-		// {-140, 20}
-
 
 		// for platform in level.platforms {
 		// 	if rl.CheckCollisionRecs(
@@ -204,13 +208,13 @@ main :: proc() {
 
 		camera := rl.Camera2D {
 			zoom   = screen_height / PixelWindowHeight,
-			offset = {f32(rl.GetScreenWidth()) / 2, f32(rl.GetScreenHeight() / 2)},
+			offset = {f32(rl.GetScreenWidth()) / 2, screen_height / 2},
 			target = player_pos,
 		}
 
 		animation_update(&anim, rl.GetFrameTime())
 
-		// update position
+		// update target position
 		for &target in level.scary_words {
 
 			move_point_to(
@@ -229,10 +233,14 @@ main :: proc() {
 			}
 		}
 
+		// handle player input
+		handle_input(&player_input)
+
 
 		rl.BeginMode2D(camera)
-		//test animation render
+
 		animation_draw(anim, player_pos)
+
 
 		for target in level.scary_words {
 			pos := target.pos
@@ -249,7 +257,7 @@ main :: proc() {
 			// strings.write_string(&builder, target.word)
 			// rl.DrawTextEx(font, strings.to_cstring(&builder), pos, 5, 0, rl.WHITE)
 
-			rl.DrawTextEx(font, target.word, pos, 5, 0, rl.WHITE)
+			rl.DrawTextEx(font, target.word, pos, 3, 0, rl.WHITE)
 
 			free_all(context.temp_allocator)
 		}
@@ -262,19 +270,59 @@ main :: proc() {
 			is_editing = !is_editing
 		}
 
-		// rl.DrawTextEx(font, "Draw call 1: This text + player + background graphics + tiles", {-140, 20}, 8, 0, rl.WHITE)
-		// rl.DrawTextEx(font, fmt.printf("%f, %f", player_pos.x, player_pos.y), {-140, 20}, 8, 0, rl.WHITE)
-
 		rl.EndMode2D()
+
+
+		font_size := f32(50)
+		rl.DrawTextEx(
+			font,
+			level.safe_word,
+			{
+				(f32(rl.GetScreenWidth()) / 2) - font_size,
+				f32(rl.GetScreenHeight()) - (font_size + 10),
+			},
+			font_size,
+			0,
+			rl.YELLOW,
+		)
+
+		rl.DrawTexturePro(
+			atlas,
+			title_texture.rect,
+			//NOTE: still not sure what dest Rect affects
+			{
+				f32(rl.GetScreenWidth()) - title_texture.document_size.x * 2,
+				30,
+				title_texture.rect.width * 5,
+				title_texture.rect.height * 5,
+			},
+			{f32(rl.GetScreenWidth()) / 2, 10},
+			0,
+			rl.WHITE,
+		)
+
+		// fmt.println(player_input)
+
+		if input_string, err := strings.to_cstring(&player_input); err == nil {
+			rl.DrawTextEx(font, input_string, {f32(rl.GetScreenWidth()) / 2, 10}, 20, 0, rl.WHITE)
+		}
+
+		// fmt.println("after")
+		// fmt.println(player_input)
+
+		// rl.DrawTextEx(
+		// 	font,
+		// 	strings.to_cstring(&player_input),
+		// 	{f32(rl.GetScreenWidth()) / 2, 10},
+		// 	20,
+		// 	0,
+		// 	rl.WHITE,
+		// )
+
 		rl.EndDrawing()
 	}
 
 	rl.CloseWindow()
-
-	// if level_data, err := json.marshal(level, allocator = context.temp_allocator); err == nil {
-	// 	os.write_entire_file("level.json", level_data)
-	// }
-
 
 	// if config_data, err := json.marshal(config, allocator = context.temp_allocator);
 	//    err == nil {
